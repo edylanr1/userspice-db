@@ -1,0 +1,21 @@
+version: "2"
+
+services:
+# NB that the service name (or network alias) must match the hostname in /opt/UserSpice/users/init.php ('userspice' by default)
+  userspice:
+    image: jtullett/userspice-db:v3
+    hostname: userspice-db
+    ports:
+      - "3306"
+    restart: on-failure
+
+  www:
+    depends_on:
+      - userspice
+    image: nginx:latest
+    ports:
+      - 8080:80
+    volumes_from:
+      - userspice
+    volumes:
+      - ./html/:/usr/share/nginx/html/
