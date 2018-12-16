@@ -1,13 +1,15 @@
 version: "2"
+# NB: the html mount point must be writable for the userspice container, so it can copy in the UserSpice template files
+# NB: the userspice service name (or network alias) should match the hostname in init.php ('userspice' by default) for db connections
 
 services:
-# NB that the service name (or network alias) must match the hostname in /opt/UserSpice/users/init.php ('userspice' by default)
   userspice:
-    image: jtullett/userspice-db:v3
+    image: jtullett/userspice-db:v5
     hostname: userspice-db
     ports:
       - "3306"
-    restart: on-failure
+    volumes:
+      - ./www/html/UserSpice/:/usr/share/nginx/html/UserSpice/
 
   www:
     depends_on:
@@ -18,4 +20,4 @@ services:
     volumes_from:
       - userspice
     volumes:
-      - ./html/:/usr/share/nginx/html/
+      - ./www/html/:/usr/share/nginx/html/
