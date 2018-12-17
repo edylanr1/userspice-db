@@ -1,23 +1,46 @@
-version: "2"
-# NB: the html mount point must be writable for the userspice container, so it can copy in the UserSpice template files
-# NB: the userspice service name (or network alias) should match the hostname in init.php ('userspice' by default) for db connections
+version: "3"
+
 
 services:
+
+# Each service loads .env to retrieve WWW_ROOT, the top level directory for files. Defaults to /opt/www
+
+# Use a php container with pdo_mysql and mysqli support
+# If it's not part of your base image, include the php.conf file from this image's repo
+  php:
+    env_file: .env
+    user: ${UID:-1000}:${GID:-1000}
+    image: jtullett/userspice-php:v2
+    volumes:
+      - ${WWW_ROOT:-/opt/www}:/usr/share/nginx/html:ro
+
+# NB that the service name (or network alias) must match the hostname in /opt/UserSpice/users/init.php ('userspice' by default)
+# NB: MariaDB's default uid:gid is 999:999. The WWW_ROOT/UserSpice directory must be writeable to that ID, whatever it's called
+#   To change this behaviour, modify the Dockerfile or the userspice-db image
   userspice:
+    env_file: .env
+    depends_on:
+      - php
     image: jtullett/userspice-db:v5
     hostname: userspice-db
     ports:
-      - "3306"
+      - 3306
     volumes:
-      - ./www/html/UserSpice/:/usr/share/nginx/html/UserSpice/
+      - ${WWW_ROOT:-/opt/www}/UserSpice:/opt/www/UserSpice
 
   www:
+    env_file: .env
     depends_on:
       - userspice
+      - php
     image: nginx:latest
     ports:
       - 8080:80
-    volumes_from:
-      - userspice
     volumes:
-      - ./www/html/:/usr/share/nginx/html/
+      - ${WWW_ROOT:-/opt/www}:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    environment:
+      - "NGINX_HOST:www2.blairgowriesecurity.co.za"
+      - "VIRTUAL_HOST:www2.blairgowriesecurity.co.za"
+      - "LETSENCRYPT_HOST:www2.blairgowriesecurity.co.za"
+      - "LETSENCRYPT_EMAIL:admin@blairgowriesecurity.co.za"
