@@ -9,7 +9,6 @@ services:
 # If it's not part of your base image, include the php.conf file from this image's repo
   php:
     env_file: .env
-    user: ${UID:-1000}:${GID:-1000}
     image: jtullett/userspice-php:v2
     volumes:
       - ${WWW_ROOT:-/opt/www}:/usr/share/nginx/html:ro
